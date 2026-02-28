@@ -11,21 +11,24 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics.js"></script>
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Custom Styles -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
         * {
-            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f8c5c0 0%, #ffffff 50%, #f8c5c0 100%);
+            min-height: 100vh;
+        }
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -41,30 +44,15 @@
             border-radius: 4px;
         }
         
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a51502;
-        }
-        
         /* Animations */
         @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
         }
         
         .animate-slide-up {
@@ -74,35 +62,7 @@
         .animate-fade-in {
             animation: fadeIn 0.5s ease-out;
         }
-        
-        .animate-pulse-slow {
-            animation: pulse 2s infinite;
-        }
-        
-        /* Audio player customization */
-        .custom-audio-player {
-            background: transparent !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-        }
-        
-        .custom-audio-player .rhap_progress-section {
-            display: none;
-        }
-        
-        .custom-audio-player .rhap_controls-section {
-            margin: 0 !important;
-            flex: 1 !important;
-        }
-        
-        .custom-audio-player .rhap_main-controls button {
-            color: #d12200 !important;
-        }
-        
-        .custom-audio-player .rhap_volume-controls {
-            justify-content: flex-end !important;
-        }
-        
+
         /* Loading spinner */
         .loader {
             border: 3px solid #f8c5c0;
@@ -117,24 +77,17 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
-        /* Responsive tables */
-        @media (max-width: 768px) {
-            .responsive-table {
-                display: block;
-                width: 100%;
-                overflow-x: auto;
-            }
+
+        /* Card hover effects */
+        .song-card {
+            transition: all 0.3s ease;
         }
         
-        /* Glass morphism */
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+        .song-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(209, 34, 0, 0.1), 0 10px 10px -5px rgba(209, 34, 0, 0.04);
         }
-        
+
         /* Gradient text */
         .gradient-text {
             background: linear-gradient(135deg, #d12200 0%, #a51502 100%);
@@ -144,11 +97,11 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-[#f8c5c0] via-white to-[#f8c5c0] min-h-screen">
+<body>
 
     <!-- App Container -->
     <div id="app" class="min-h-screen flex flex-col">
-        <!-- Navigation will be injected here -->
+        <!-- Navbar will be injected here -->
         <div id="navbar"></div>
         
         <!-- Main Content -->
@@ -160,12 +113,12 @@
                 </div>
                 
                 <!-- Content will be injected here -->
-                <div id="page-content"></div>
+                <div id="page-content" class="animate-fade-in"></div>
             </div>
         </main>
         
         <!-- Footer -->
-        <footer id="footer" class="bg-gradient-to-r from-[#d12200] to-[#a51502] text-white mt-auto">
+        <footer class="bg-gradient-to-r from-[#d12200] to-[#a51502] text-white mt-auto">
             <div class="container mx-auto px-4 py-8">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div>
@@ -175,9 +128,9 @@
                     <div>
                         <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
                         <ul class="space-y-2">
-                            <li><a href="#" onclick="navigateTo('songs')" class="text-[#f8c5c0] hover:text-white transition">Songs</a></li>
-                            <li><a href="#" onclick="navigateTo('videos')" class="text-[#f8c5c0] hover:text-white transition">Videos</a></li>
-                            <li><a href="#" onclick="navigateTo('about')" class="text-[#f8c5c0] hover:text-white transition">About</a></li>
+                            <li><a href="#" onclick="navigateTo('songs'); return false;" class="text-[#f8c5c0] hover:text-white transition">Songs</a></li>
+                            <li><a href="#" onclick="navigateTo('videos'); return false;" class="text-[#f8c5c0] hover:text-white transition">Videos</a></li>
+                            <li><a href="#" onclick="navigateTo('about'); return false;" class="text-[#f8c5c0] hover:text-white transition">About</a></li>
                         </ul>
                     </div>
                     <div>
@@ -214,9 +167,7 @@
             <form id="rating-form" onsubmit="submitRating(event)">
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-2">Your Rating *</label>
-                    <div class="flex gap-1" id="rating-stars">
-                        <!-- Stars will be generated here -->
-                    </div>
+                    <div class="flex gap-1" id="rating-stars"></div>
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-1">Name *</label>
@@ -235,15 +186,14 @@
         </div>
     </div>
 
-    <!-- Success Toast -->
-    <div id="toast" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-20">
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-20 z-50">
         <i class="fas fa-check-circle mr-2"></i>
         <span id="toast-message"></span>
     </div>
 
-    <!-- Firebase Configuration -->
     <script>
-        // Firebase configuration
+        // ==================== FIREBASE CONFIGURATION ====================
         const firebaseConfig = {
             apiKey: "AIzaSyBiEQsW2ClPd6dbpmy0EQCNr6JArQnSDYc",
             authDomain: "nwtnmusical-5af09.firebaseapp.com",
@@ -255,28 +205,81 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const storage = firebase.storage();
-        const analytics = firebase.analytics();
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+        }
 
-        // App State
-        let currentUser = null;
+        // ==================== SAMPLE DATA (for testing without Firebase) ====================
+        const sampleSongs = [
+            {
+                id: '1',
+                title: 'Midnight Dreams',
+                artist: 'NWTN',
+                thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400',
+                duration: '3:45',
+                plays: 1250
+            },
+            {
+                id: '2',
+                title: 'Summer Breeze',
+                artist: 'NWTN ft. Artist',
+                thumbnail: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400',
+                duration: '4:20',
+                plays: 890
+            },
+            {
+                id: '3',
+                title: 'Urban Rhythm',
+                artist: 'NWTN',
+                thumbnail: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400',
+                duration: '3:30',
+                plays: 2100
+            },
+            {
+                id: '4',
+                title: 'Night City',
+                artist: 'NWTN',
+                thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
+                duration: '4:15',
+                plays: 3400
+            }
+        ];
+
+        const sampleVideos = [
+            {
+                id: '1',
+                title: 'NWTN - Midnight Dreams (Official Video)',
+                thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
+                views: 3500,
+                description: 'Official music video for Midnight Dreams'
+            },
+            {
+                id: '2',
+                title: 'NWTN - Summer Breeze (Live Session)',
+                thumbnail: 'https://img.youtube.com/vi/9bZkp7q19f0/maxresdefault.jpg',
+                views: 1800,
+                description: 'Live acoustic performance'
+            }
+        ];
+
+        // ==================== APP STATE ====================
         let currentPage = 'home';
         let selectedRating = 0;
         let currentContentId = null;
         let currentContentType = null;
-        let audioPlayers = {};
 
-        // Navigation
-        function navigateTo(page, params = {}) {
+        // ==================== NAVIGATION ====================
+        function navigateTo(page) {
             currentPage = page;
-            renderPage(page, params);
+            renderPage(page);
             updateActiveNav();
         }
 
-        // Update active navigation
         function updateActiveNav() {
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('text-[#d12200]', 'font-semibold');
@@ -286,7 +289,7 @@
             });
         }
 
-        // Render Navbar
+        // ==================== RENDER FUNCTIONS ====================
         function renderNavbar() {
             const navbar = document.getElementById('navbar');
             const isAdmin = localStorage.getItem('isAdmin') === 'true';
@@ -295,33 +298,33 @@
                 <nav class="fixed w-full z-50 bg-white shadow-lg py-2">
                     <div class="container mx-auto px-4">
                         <div class="flex justify-between items-center">
-                            <a href="#" onclick="navigateTo('home')" class="flex items-center space-x-2">
+                            <a href="#" onclick="navigateTo('home'); return false;" class="flex items-center space-x-2">
                                 <span class="text-2xl font-bold text-[#d12200]">NWTN</span>
                                 <span class="text-[#a51502] font-semibold">MUSICAL</span>
                             </a>
                             <div class="hidden md:flex items-center space-x-8">
-                                <a href="#" data-page="home" onclick="navigateTo('home')" class="nav-link flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
+                                <a href="#" data-page="home" onclick="navigateTo('home'); return false;" class="nav-link flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
                                     <i class="fas fa-home"></i>
                                     <span>Home</span>
                                 </a>
-                                <a href="#" data-page="songs" onclick="navigateTo('songs')" class="nav-link flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
+                                <a href="#" data-page="songs" onclick="navigateTo('songs'); return false;" class="nav-link flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
                                     <i class="fas fa-music"></i>
                                     <span>Songs</span>
                                 </a>
-                                <a href="#" data-page="videos" onclick="navigateTo('videos')" class="nav-link flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
+                                <a href="#" data-page="videos" onclick="navigateTo('videos'); return false;" class="nav-link flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
                                     <i class="fas fa-video"></i>
                                     <span>Videos</span>
                                 </a>
-                                <a href="#" data-page="about" onclick="navigateTo('about')" class="nav-link flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
+                                <a href="#" data-page="about" onclick="navigateTo('about'); return false;" class="nav-link flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
                                     <i class="fas fa-info-circle"></i>
                                     <span>About</span>
                                 </a>
                                 ${isAdmin ? `
-                                    <a href="#" data-page="admin" onclick="navigateTo('admin')" class="bg-[#d12200] text-white px-4 py-2 rounded-lg hover:bg-[#a51502] transition">
+                                    <a href="#" data-page="admin" onclick="navigateTo('admin'); return false;" class="bg-[#d12200] text-white px-4 py-2 rounded-lg hover:bg-[#a51502] transition">
                                         <i class="fas fa-cog mr-1"></i>Dashboard
                                     </a>
                                 ` : `
-                                    <a href="#" data-page="admin-login" onclick="navigateTo('adminLogin')" class="flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
+                                    <a href="#" data-page="admin-login" onclick="navigateTo('adminLogin'); return false;" class="flex items-center space-x-1 text-gray-600 hover:text-[#d12200] transition">
                                         <i class="fas fa-sign-in-alt"></i>
                                         <span>Admin</span>
                                     </a>
@@ -332,244 +335,86 @@
                             </button>
                         </div>
                         <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4">
-                            <!-- Mobile menu links will be added here -->
+                            <!-- Mobile menu will be populated by toggleMobileMenu() -->
                         </div>
                     </div>
                 </nav>
             `;
+            
+            updateActiveNav();
         }
 
-        // Render Home Page
-        async function renderHomePage() {
-            showLoading();
+        function renderHomePage() {
             const content = document.getElementById('page-content');
             
-            try {
-                // Fetch recent songs
-                const songsSnapshot = await db.collection('songs')
-                    .orderBy('createdAt', 'desc')
-                    .limit(6)
-                    .get();
-                
-                const songs = songsSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                // Fetch recent videos
-                const videosSnapshot = await db.collection('videos')
-                    .orderBy('createdAt', 'desc')
-                    .limit(6)
-                    .get();
-                
-                const videos = videosSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                hideLoading();
-
-                content.innerHTML = `
-                    <!-- Hero Section -->
-                    <div class="relative h-[400px] md:h-[500px] rounded-3xl overflow-hidden mb-12 group">
-                        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200" 
-                             alt="Hero" 
-                             class="w-full h-full object-cover transition-transform duration-10000 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-r from-[#d12200] via-transparent to-[#a51502] opacity-90"></div>
-                        <div class="absolute inset-0 flex flex-col justify-center items-start p-8 md:p-12 text-white">
-                            <h1 class="text-4xl md:text-7xl font-bold mb-4 animate-slide-up">NWTN MUSICAL</h1>
-                            <p class="text-lg md:text-2xl mb-8 max-w-2xl animate-slide-up">Experience the rhythm of quality music. Stream the best tracks and videos.</p>
-                            <button onclick="navigateTo('songs')" class="bg-white text-[#d12200] px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold flex items-center gap-2 hover:scale-105 transition-transform animate-slide-up">
-                                <i class="fas fa-play text-[#d12200]"></i> Start Listening
-                            </button>
-                        </div>
+            content.innerHTML = `
+                <!-- Hero Section -->
+                <div class="relative h-[400px] md:h-[500px] rounded-3xl overflow-hidden mb-12 group">
+                    <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200" 
+                         alt="Hero" 
+                         class="w-full h-full object-cover transition-transform duration-10000 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#d12200] via-transparent to-[#a51502] opacity-90"></div>
+                    <div class="absolute inset-0 flex flex-col justify-center items-start p-8 md:p-12 text-white">
+                        <h1 class="text-4xl md:text-7xl font-bold mb-4 animate-slide-up">NWTN MUSICAL</h1>
+                        <p class="text-lg md:text-2xl mb-8 max-w-2xl animate-slide-up">Experience the rhythm of quality music. Stream the best tracks and videos.</p>
+                        <button onclick="navigateTo('songs')" class="bg-white text-[#d12200] px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold flex items-center gap-2 hover:scale-105 transition-transform animate-slide-up">
+                            <i class="fas fa-play text-[#d12200]"></i> Start Listening
+                        </button>
                     </div>
+                </div>
 
-                    <!-- Featured Player -->
-                    ${songs.length > 0 ? `
-                        <div class="bg-gradient-to-r from-[#d12200] to-[#a51502] rounded-2xl p-4 md:p-6 mb-8 text-white">
-                            <div class="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-                                <div class="w-24 h-24 md:w-40 md:h-40 rounded-lg overflow-hidden shadow-2xl">
-                                    <img src="${songs[0].thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400'}" 
-                                         alt="${songs[0].title}" 
-                                         class="w-full h-full object-cover">
-                                </div>
-                                <div class="flex-1 text-center md:text-left">
-                                    <p class="text-[#f8c5c0] text-sm mb-2">FEATURED TODAY</p>
-                                    <h2 class="text-xl md:text-3xl font-bold mb-2">${songs[0].title}</h2>
-                                    <p class="text-[#f8c5c0] mb-4">${songs[0].artist || 'NWTN'}</p>
-                                    <div class="flex items-center justify-center md:justify-start space-x-4">
-                                        <button onclick="playSong('${songs[0].id}')" class="bg-white text-[#d12200] p-3 rounded-full hover:scale-110 transition">
-                                            <i class="fas fa-play text-xl"></i>
-                                        </button>
-                                        <button class="p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition">
-                                            <i class="fas fa-heart"></i>
-                                        </button>
-                                        <button onclick="openRatingModal('${songs[0].id}', 'song')" class="p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition">
-                                            <i class="fas fa-star"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Featured Player -->
+                <div class="bg-gradient-to-r from-[#d12200] to-[#a51502] rounded-2xl p-4 md:p-6 mb-8 text-white">
+                    <div class="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                        <div class="w-24 h-24 md:w-40 md:h-40 rounded-lg overflow-hidden shadow-2xl">
+                            <img src="${sampleSongs[0].thumbnail}" alt="Featured" class="w-full h-full object-cover">
                         </div>
-                    ` : ''}
-
-                    <!-- Recent Songs -->
-                    <section class="mb-16">
-                        <div class="flex items-center justify-between mb-8">
-                            <h2 class="text-2xl md:text-3xl font-bold text-[#a51502]">
-                                <i class="fas fa-music text-[#d12200] mr-2"></i>Recent Releases
-                            </h2>
-                            <a href="#" onclick="navigateTo('songs')" class="text-[#d12200] hover:text-[#a51502] transition">
-                                View All <i class="fas fa-arrow-right ml-1"></i>
-                            </a>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            ${songs.map(song => `
-                                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
-                                    <div class="relative group">
-                                        <img src="${song.thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400'}" 
-                                             alt="${song.title}" 
-                                             class="w-full h-48 object-cover">
-                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
-                                            <button onclick="playSong('${song.id}')" class="bg-[#d12200] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all">
-                                                <i class="fas fa-play"></i>
-                                            </button>
-                                        </div>
-                                        <span class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">${song.duration || '3:45'}</span>
-                                    </div>
-                                    <div class="p-4">
-                                        <h3 class="font-semibold text-lg text-[#a51502]">${song.title}</h3>
-                                        <p class="text-gray-600 text-sm">${song.artist || 'NWTN'}</p>
-                                        <div class="flex items-center justify-between mt-3">
-                                            <span class="text-xs text-gray-500"><i class="fas fa-play mr-1"></i>${song.plays || 0} plays</span>
-                                            <button onclick="likeSong('${song.id}')" class="text-gray-400 hover:text-[#d12200] transition">
-                                                <i class="far fa-heart"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </section>
-
-                    <!-- Recent Videos -->
-                    <section class="mb-16">
-                        <div class="flex items-center justify-between mb-8">
-                            <h2 class="text-2xl md:text-3xl font-bold text-[#a51502]">
-                                <i class="fas fa-video text-[#d12200] mr-2"></i>Latest Videos
-                            </h2>
-                            <a href="#" onclick="navigateTo('videos')" class="text-[#d12200] hover:text-[#a51502] transition">
-                                View All <i class="fas fa-arrow-right ml-1"></i>
-                            </a>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            ${videos.map(video => `
-                                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
-                                    <div class="relative group">
-                                        <img src="${video.thumbnail || 'https://img.youtube.com/vi/default/maxresdefault.jpg'}" 
-                                             alt="${video.title}" 
-                                             class="w-full h-48 object-cover">
-                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
-                                            <button onclick="playVideo('${video.id}')" class="bg-[#d12200] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all">
-                                                <i class="fas fa-play"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="p-4">
-                                        <h3 class="font-semibold text-lg text-[#a51502]">${video.title}</h3>
-                                        <div class="flex items-center justify-between mt-3">
-                                            <span class="text-xs text-gray-500"><i class="fas fa-eye mr-1"></i>${video.views || 0} views</span>
-                                            <span class="text-xs text-gray-500"><i class="far fa-clock mr-1"></i>${video.createdAt ? new Date(video.createdAt).toLocaleDateString() : 'Recently'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </section>
-                `;
-            } catch (error) {
-                console.error('Error loading home page:', error);
-                hideLoading();
-                content.innerHTML = '<div class="text-center py-12 text-red-600">Error loading content. Please try again.</div>';
-            }
-        }
-
-        // Render Songs Page
-        async function renderSongsPage() {
-            showLoading();
-            const content = document.getElementById('page-content');
-            
-            try {
-                const snapshot = await db.collection('songs')
-                    .orderBy('createdAt', 'desc')
-                    .get();
-                
-                const songs = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                hideLoading();
-
-                content.innerHTML = `
-                    <div class="text-center mb-12">
-                        <h1 class="text-4xl md:text-5xl font-bold text-[#a51502] mb-4">All Songs</h1>
-                        <p class="text-gray-600 max-w-2xl mx-auto">Discover our collection of amazing tracks. From latest releases to timeless classics.</p>
-                    </div>
-                    
-                    <div class="mb-8">
-                        <div class="flex gap-4 mb-4">
-                            <div class="flex-1 relative">
-                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                                <input type="text" id="search-input" placeholder="Search songs by title or artist..." 
-                                       onkeyup="filterSongs()"
-                                       class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#d12200] focus:border-transparent">
-                            </div>
-                            <button onclick="toggleFilters()" class="border-2 border-[#d12200] text-[#d12200] px-6 py-2 rounded-lg hover:bg-[#d12200] hover:text-white transition">
-                                <i class="fas fa-filter mr-2"></i>Filters
-                            </button>
-                        </div>
-                        
-                        <div id="filters-panel" class="hidden bg-white p-4 rounded-lg shadow-lg mb-4">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="font-semibold text-[#a51502]">Filters</h3>
-                                <button onclick="clearFilters()" class="text-sm text-[#d12200] hover:text-[#a51502]">
-                                    <i class="fas fa-times mr-1"></i>Clear All
+                        <div class="flex-1 text-center md:text-left">
+                            <p class="text-[#f8c5c0] text-sm mb-2">FEATURED TODAY</p>
+                            <h2 class="text-xl md:text-3xl font-bold mb-2">${sampleSongs[0].title}</h2>
+                            <p class="text-[#f8c5c0] mb-4">${sampleSongs[0].artist}</p>
+                            <div class="flex items-center justify-center md:justify-start space-x-4">
+                                <button onclick="playSong('${sampleSongs[0].id}')" class="bg-white text-[#d12200] p-3 rounded-full hover:scale-110 transition">
+                                    <i class="fas fa-play text-xl"></i>
+                                </button>
+                                <button onclick="likeSong('${sampleSongs[0].id}')" class="p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                                <button onclick="openRatingModal('${sampleSongs[0].id}', 'song')" class="p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition">
+                                    <i class="fas fa-star"></i>
                                 </button>
                             </div>
-                            <select id="artist-filter" onchange="filterSongs()" class="w-full p-2 border border-gray-300 rounded-lg">
-                                <option value="">All Artists</option>
-                                ${[...new Set(songs.map(s => s.artist))].map(artist => 
-                                    `<option value="${artist}">${artist}</option>`
-                                ).join('')}
-                            </select>
                         </div>
-                        
-                        <p class="text-gray-600" id="results-count">Showing ${songs.length} songs</p>
                     </div>
-                    
-                    <div id="songs-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        ${songs.map(song => `
-                            <div class="song-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1" 
-                                 data-title="${song.title.toLowerCase()}" 
-                                 data-artist="${(song.artist || '').toLowerCase()}">
+                </div>
+
+                <!-- Recent Songs -->
+                <section class="mb-16">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-2xl md:text-3xl font-bold text-[#a51502]">
+                            <i class="fas fa-music text-[#d12200] mr-2"></i>Recent Releases
+                        </h2>
+                        <a href="#" onclick="navigateTo('songs'); return false;" class="text-[#d12200] hover:text-[#a51502] transition">
+                            View All <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        ${sampleSongs.map(song => `
+                            <div class="song-card bg-white rounded-xl shadow-lg overflow-hidden">
                                 <div class="relative group">
-                                    <img src="${song.thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400'}" 
-                                         alt="${song.title}" 
-                                         class="w-full h-48 object-cover">
+                                    <img src="${song.thumbnail}" alt="${song.title}" class="w-full h-48 object-cover">
                                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
                                         <button onclick="playSong('${song.id}')" class="bg-[#d12200] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all">
                                             <i class="fas fa-play"></i>
                                         </button>
                                     </div>
-                                    <span class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">${song.duration || '3:45'}</span>
+                                    <span class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">${song.duration}</span>
                                 </div>
                                 <div class="p-4">
                                     <h3 class="font-semibold text-lg text-[#a51502]">${song.title}</h3>
-                                    <p class="text-gray-600 text-sm">${song.artist || 'NWTN'}</p>
+                                    <p class="text-gray-600 text-sm">${song.artist}</p>
                                     <div class="flex items-center justify-between mt-3">
-                                        <span class="text-xs text-gray-500"><i class="fas fa-play mr-1"></i>${song.plays || 0} plays</span>
+                                        <span class="text-xs text-gray-500"><i class="fas fa-play mr-1"></i>${song.plays} plays</span>
                                         <button onclick="likeSong('${song.id}')" class="text-gray-400 hover:text-[#d12200] transition">
                                             <i class="far fa-heart"></i>
                                         </button>
@@ -578,54 +423,23 @@
                             </div>
                         `).join('')}
                     </div>
-                `;
-            } catch (error) {
-                console.error('Error loading songs:', error);
-                hideLoading();
-                content.innerHTML = '<div class="text-center py-12 text-red-600">Error loading songs. Please try again.</div>';
-            }
-        }
+                </section>
 
-        // Render Videos Page
-        async function renderVideosPage() {
-            showLoading();
-            const content = document.getElementById('page-content');
-            
-            try {
-                const snapshot = await db.collection('videos')
-                    .orderBy('createdAt', 'desc')
-                    .get();
-                
-                const videos = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                hideLoading();
-
-                content.innerHTML = `
-                    <div class="text-center mb-12">
-                        <h1 class="text-4xl md:text-5xl font-bold text-[#a51502] mb-4">Music Videos</h1>
-                        <p class="text-gray-600 max-w-2xl mx-auto">Watch the latest music videos and live performances.</p>
+                <!-- Recent Videos -->
+                <section class="mb-16">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-2xl md:text-3xl font-bold text-[#a51502]">
+                            <i class="fas fa-video text-[#d12200] mr-2"></i>Latest Videos
+                        </h2>
+                        <a href="#" onclick="navigateTo('videos'); return false;" class="text-[#d12200] hover:text-[#a51502] transition">
+                            View All <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
                     </div>
-                    
-                    <div class="mb-8">
-                        <div class="relative">
-                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" id="video-search" placeholder="Search videos..." 
-                                   onkeyup="filterVideos()"
-                                   class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#d12200] focus:border-transparent">
-                        </div>
-                    </div>
-                    
-                    <div id="videos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        ${videos.map(video => `
-                            <div class="video-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1"
-                                 data-title="${video.title.toLowerCase()}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        ${sampleVideos.map(video => `
+                            <div class="song-card bg-white rounded-xl shadow-lg overflow-hidden">
                                 <div class="relative group">
-                                    <img src="${video.thumbnail || 'https://img.youtube.com/vi/default/maxresdefault.jpg'}" 
-                                         alt="${video.title}" 
-                                         class="w-full h-48 object-cover">
+                                    <img src="${video.thumbnail}" alt="${video.title}" class="w-full h-48 object-cover">
                                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
                                         <button onclick="playVideo('${video.id}')" class="bg-[#d12200] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all">
                                             <i class="fas fa-play"></i>
@@ -634,9 +448,9 @@
                                 </div>
                                 <div class="p-4">
                                     <h3 class="font-semibold text-lg text-[#a51502]">${video.title}</h3>
-                                    ${video.description ? `<p class="text-sm text-gray-600 mt-2 line-clamp-2">${video.description}</p>` : ''}
+                                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${video.description}</p>
                                     <div class="flex items-center justify-between mt-3">
-                                        <span class="text-xs text-gray-500"><i class="fas fa-eye mr-1"></i>${video.views || 0} views</span>
+                                        <span class="text-xs text-gray-500"><i class="fas fa-eye mr-1"></i>${video.views} views</span>
                                         <button onclick="openRatingModal('${video.id}', 'video')" class="text-gray-400 hover:text-[#d12200] transition">
                                             <i class="far fa-star"></i>
                                         </button>
@@ -645,17 +459,128 @@
                             </div>
                         `).join('')}
                     </div>
-                `;
-            } catch (error) {
-                console.error('Error loading videos:', error);
-                hideLoading();
-                content.innerHTML = '<div class="text-center py-12 text-red-600">Error loading videos. Please try again.</div>';
-            }
+                </section>
+            `;
         }
 
-        // Render About Page
+        function renderSongsPage() {
+            const content = document.getElementById('page-content');
+            
+            content.innerHTML = `
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl md:text-5xl font-bold text-[#a51502] mb-4">All Songs</h1>
+                    <p class="text-gray-600 max-w-2xl mx-auto">Discover our collection of amazing tracks. From latest releases to timeless classics.</p>
+                </div>
+                
+                <div class="mb-8">
+                    <div class="flex gap-4 mb-4">
+                        <div class="flex-1 relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="search-input" placeholder="Search songs by title or artist..." 
+                                   onkeyup="filterSongs()"
+                                   class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#d12200] focus:border-transparent">
+                        </div>
+                        <button onclick="toggleFilters()" class="border-2 border-[#d12200] text-[#d12200] px-6 py-2 rounded-lg hover:bg-[#d12200] hover:text-white transition">
+                            <i class="fas fa-filter mr-2"></i>Filters
+                        </button>
+                    </div>
+                    
+                    <div id="filters-panel" class="hidden bg-white p-4 rounded-lg shadow-lg mb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-[#a51502]">Filters</h3>
+                            <button onclick="clearFilters()" class="text-sm text-[#d12200] hover:text-[#a51502]">
+                                <i class="fas fa-times mr-1"></i>Clear All
+                            </button>
+                        </div>
+                        <select id="artist-filter" onchange="filterSongs()" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="">All Artists</option>
+                            <option value="nwtn">NWTN</option>
+                            <option value="nwtn ft. artist">NWTN ft. Artist</option>
+                        </select>
+                    </div>
+                    
+                    <p class="text-gray-600" id="results-count">Showing ${sampleSongs.length} songs</p>
+                </div>
+                
+                <div id="songs-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    ${sampleSongs.map(song => `
+                        <div class="song-card bg-white rounded-xl shadow-lg overflow-hidden" 
+                             data-title="${song.title.toLowerCase()}" 
+                             data-artist="${song.artist.toLowerCase()}">
+                            <div class="relative group">
+                                <img src="${song.thumbnail}" alt="${song.title}" class="w-full h-48 object-cover">
+                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
+                                    <button onclick="playSong('${song.id}')" class="bg-[#d12200] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                                <span class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">${song.duration}</span>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-lg text-[#a51502]">${song.title}</h3>
+                                <p class="text-gray-600 text-sm">${song.artist}</p>
+                                <div class="flex items-center justify-between mt-3">
+                                    <span class="text-xs text-gray-500"><i class="fas fa-play mr-1"></i>${song.plays} plays</span>
+                                    <button onclick="likeSong('${song.id}')" class="text-gray-400 hover:text-[#d12200] transition">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderVideosPage() {
+            const content = document.getElementById('page-content');
+            
+            content.innerHTML = `
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl md:text-5xl font-bold text-[#a51502] mb-4">Music Videos</h1>
+                    <p class="text-gray-600 max-w-2xl mx-auto">Watch the latest music videos and live performances.</p>
+                </div>
+                
+                <div class="mb-8">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="video-search" placeholder="Search videos..." 
+                               onkeyup="filterVideos()"
+                               class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#d12200] focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div id="videos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    ${sampleVideos.map(video => `
+                        <div class="video-card bg-white rounded-xl shadow-lg overflow-hidden"
+                             data-title="${video.title.toLowerCase()}">
+                            <div class="relative group">
+                                <img src="${video.thumbnail}" alt="${video.title}" class="w-full h-48 object-cover">
+                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
+                                    <button onclick="playVideo('${video.id}')" class="bg-[#d12200] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-lg text-[#a51502]">${video.title}</h3>
+                                <p class="text-sm text-gray-600 mt-2 line-clamp-2">${video.description}</p>
+                                <div class="flex items-center justify-between mt-3">
+                                    <span class="text-xs text-gray-500"><i class="fas fa-eye mr-1"></i>${video.views} views</span>
+                                    <button onclick="openRatingModal('${video.id}', 'video')" class="text-gray-400 hover:text-[#d12200] transition">
+                                        <i class="far fa-star"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         function renderAboutPage() {
             const content = document.getElementById('page-content');
+            
             content.innerHTML = `
                 <div class="max-w-4xl mx-auto">
                     <div class="text-center mb-12">
@@ -698,9 +623,9 @@
             `;
         }
 
-        // Render Admin Login Page
         function renderAdminLoginPage() {
             const content = document.getElementById('page-content');
+            
             content.innerHTML = `
                 <div class="min-h-[600px] flex items-center justify-center">
                     <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
@@ -735,126 +660,163 @@
             `;
         }
 
-        // Render Admin Dashboard
-        async function renderAdminDashboard() {
-            showLoading();
+        function renderAdminDashboard() {
             const content = document.getElementById('page-content');
             
-            try {
-                // Fetch statistics
-                const songsSnapshot = await db.collection('songs').get();
-                const videosSnapshot = await db.collection('videos').get();
-                const commentsSnapshot = await db.collection('comments').get();
-                const ratingsSnapshot = await db.collection('ratings').get();
+            content.innerHTML = `
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-[#a51502]">Admin Dashboard</h1>
+                </div>
                 
-                const stats = {
-                    songs: songsSnapshot.size,
-                    videos: videosSnapshot.size,
-                    comments: commentsSnapshot.size,
-                    ratings: ratingsSnapshot.size
-                };
-
-                hideLoading();
-
-                content.innerHTML = `
-                    <div class="mb-8">
-                        <h1 class="text-3xl font-bold text-[#a51502]">Admin Dashboard</h1>
-                    </div>
-                    
-                    <!-- Stats Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-500 text-sm">Total Songs</p>
-                                    <p class="text-3xl font-bold text-[#d12200]">${stats.songs}</p>
-                                </div>
-                                <i class="fas fa-music text-4xl text-[#f8c5c0]"></i>
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Total Songs</p>
+                                <p class="text-3xl font-bold text-[#d12200]">${sampleSongs.length}</p>
                             </div>
-                        </div>
-                        
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-500 text-sm">Total Videos</p>
-                                    <p class="text-3xl font-bold text-[#d12200]">${stats.videos}</p>
-                                </div>
-                                <i class="fas fa-video text-4xl text-[#f8c5c0]"></i>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-500 text-sm">Comments</p>
-                                    <p class="text-3xl font-bold text-[#d12200]">${stats.comments}</p>
-                                </div>
-                                <i class="fas fa-comments text-4xl text-[#f8c5c0]"></i>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-500 text-sm">Ratings</p>
-                                    <p class="text-3xl font-bold text-[#d12200]">${stats.ratings}</p>
-                                </div>
-                                <i class="fas fa-star text-4xl text-[#f8c5c0]"></i>
-                            </div>
+                            <i class="fas fa-music text-4xl text-[#f8c5c0]"></i>
                         </div>
                     </div>
                     
-                    <!-- Admin Tabs -->
-                    <div class="bg-white rounded-lg shadow overflow-hidden">
-                        <div class="border-b border-gray-200">
-                            <nav class="flex overflow-x-auto">
-                                <button onclick="switchAdminTab('songs')" class="admin-tab active px-6 py-3 text-[#d12200] border-b-2 border-[#d12200] font-medium">
-                                    <i class="fas fa-music mr-2"></i>Songs
-                                </button>
-                                <button onclick="switchAdminTab('videos')" class="admin-tab px-6 py-3 text-gray-500 hover:text-[#d12200] font-medium">
-                                    <i class="fas fa-video mr-2"></i>Videos
-                                </button>
-                                <button onclick="switchAdminTab('comments')" class="admin-tab px-6 py-3 text-gray-500 hover:text-[#d12200] font-medium">
-                                    <i class="fas fa-comments mr-2"></i>Comments
-                                </button>
-                                <button onclick="switchAdminTab('analytics')" class="admin-tab px-6 py-3 text-gray-500 hover:text-[#d12200] font-medium">
-                                    <i class="fas fa-chart-bar mr-2"></i>Analytics
-                                </button>
-                                <button onclick="switchAdminTab('settings')" class="admin-tab px-6 py-3 text-gray-500 hover:text-[#d12200] font-medium">
-                                    <i class="fas fa-cog mr-2"></i>Settings
-                                </button>
-                                <button onclick="logout()" class="px-6 py-3 text-red-600 hover:bg-red-50 font-medium ml-auto">
-                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                                </button>
-                            </nav>
-                        </div>
-                        
-                        <div id="admin-content" class="p-6">
-                            <!-- Admin content will be loaded here -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Total Videos</p>
+                                <p class="text-3xl font-bold text-[#d12200]">${sampleVideos.length}</p>
+                            </div>
+                            <i class="fas fa-video text-4xl text-[#f8c5c0]"></i>
                         </div>
                     </div>
-                `;
+                    
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Comments</p>
+                                <p class="text-3xl font-bold text-[#d12200]">24</p>
+                            </div>
+                            <i class="fas fa-comments text-4xl text-[#f8c5c0]"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Ratings</p>
+                                <p class="text-3xl font-bold text-[#d12200]">156</p>
+                            </div>
+                            <i class="fas fa-star text-4xl text-[#f8c5c0]"></i>
+                        </div>
+                    </div>
+                </div>
                 
-                // Load default admin tab
-                loadAdminSongs();
-            } catch (error) {
-                console.error('Error loading admin dashboard:', error);
-                hideLoading();
-                content.innerHTML = '<div class="text-center py-12 text-red-600">Error loading dashboard. Please try again.</div>';
+                <!-- Admin Tabs -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex overflow-x-auto">
+                            <button onclick="switchAdminTab('songs')" class="admin-tab active px-6 py-3 text-[#d12200] border-b-2 border-[#d12200] font-medium">
+                                <i class="fas fa-music mr-2"></i>Songs
+                            </button>
+                            <button onclick="switchAdminTab('videos')" class="admin-tab px-6 py-3 text-gray-500 hover:text-[#d12200] font-medium">
+                                <i class="fas fa-video mr-2"></i>Videos
+                            </button>
+                            <button onclick="switchAdminTab('comments')" class="admin-tab px-6 py-3 text-gray-500 hover:text-[#d12200] font-medium">
+                                <i class="fas fa-comments mr-2"></i>Comments
+                            </button>
+                            <button onclick="switchAdminTab('settings')" class="admin-tab px-6 py-3 text-gray-500 hover:text-[#d12200] font-medium">
+                                <i class="fas fa-cog mr-2"></i>Settings
+                            </button>
+                            <button onclick="logout()" class="px-6 py-3 text-red-600 hover:bg-red-50 font-medium ml-auto">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </button>
+                        </nav>
+                    </div>
+                    
+                    <div id="admin-content" class="p-6">
+                        ${renderAdminSongsTable()}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAdminSongsTable() {
+            return `
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-[#a51502]">Manage Songs</h2>
+                    <button onclick="showAddSongForm()" class="bg-[#d12200] text-white px-4 py-2 rounded-lg hover:bg-[#a51502]">
+                        <i class="fas fa-plus mr-2"></i>Add New Song
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thumbnail</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Artist</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plays</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            ${sampleSongs.map(song => `
+                                <tr>
+                                    <td class="px-6 py-4">
+                                        <img src="${song.thumbnail}" class="w-12 h-12 object-cover rounded">
+                                    </td>
+                                    <td class="px-6 py-4">${song.title}</td>
+                                    <td class="px-6 py-4">${song.artist}</td>
+                                    <td class="px-6 py-4">${song.plays}</td>
+                                    <td class="px-6 py-4">
+                                        <button onclick="editSong('${song.id}')" class="text-blue-600 hover:text-blue-800 mr-3">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteSong('${song.id}')" class="text-red-600 hover:text-red-800">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // ==================== PAGE RENDERING ====================
+        function renderPage(page) {
+            const content = document.getElementById('page-content');
+            
+            switch(page) {
+                case 'home':
+                    renderHomePage();
+                    break;
+                case 'songs':
+                    renderSongsPage();
+                    break;
+                case 'videos':
+                    renderVideosPage();
+                    break;
+                case 'about':
+                    renderAboutPage();
+                    break;
+                case 'adminLogin':
+                    renderAdminLoginPage();
+                    break;
+                case 'admin':
+                    renderAdminDashboard();
+                    break;
+                default:
+                    renderHomePage();
             }
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
         }
 
-        // Utility Functions
-        function showLoading() {
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('page-content').classList.add('hidden');
-        }
-
-        function hideLoading() {
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('page-content').classList.remove('hidden');
-        }
-
+        // ==================== UTILITY FUNCTIONS ====================
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             const toastMessage = document.getElementById('toast-message');
@@ -868,94 +830,29 @@
             }, 3000);
         }
 
-        // Rating Modal Functions
-        function openRatingModal(contentId, contentType) {
-            currentContentId = contentId;
-            currentContentType = contentType;
-            selectedRating = 0;
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const isAdmin = localStorage.getItem('isAdmin') === 'true';
             
-            const modal = document.getElementById('rating-modal');
-            const starsContainer = document.getElementById('rating-stars');
-            
-            starsContainer.innerHTML = '';
-            for (let i = 1; i <= 5; i++) {
-                starsContainer.innerHTML += `
-                    <button type="button" onclick="setRating(${i})" class="rating-star focus:outline-none">
-                        <i class="far fa-star text-3xl ${i <= selectedRating ? 'text-yellow-400' : 'text-gray-300'}"></i>
-                    </button>
+            if (menu.classList.contains('hidden')) {
+                menu.innerHTML = `
+                    <a href="#" onclick="navigateTo('home'); toggleMobileMenu(); return false;" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">Home</a>
+                    <a href="#" onclick="navigateTo('songs'); toggleMobileMenu(); return false;" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">Songs</a>
+                    <a href="#" onclick="navigateTo('videos'); toggleMobileMenu(); return false;" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">Videos</a>
+                    <a href="#" onclick="navigateTo('about'); toggleMobileMenu(); return false;" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">About</a>
+                    ${isAdmin ? `
+                        <a href="#" onclick="navigateTo('admin'); toggleMobileMenu(); return false;" class="block py-2 px-4 bg-[#d12200] text-white rounded">Dashboard</a>
+                    ` : `
+                        <a href="#" onclick="navigateTo('adminLogin'); toggleMobileMenu(); return false;" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">Admin Login</a>
+                    `}
                 `;
-            }
-            
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function setRating(rating) {
-            selectedRating = rating;
-            const stars = document.querySelectorAll('.rating-star i');
-            stars.forEach((star, index) => {
-                if (index < rating) {
-                    star.className = 'fas fa-star text-3xl text-yellow-400';
-                } else {
-                    star.className = 'far fa-star text-3xl text-gray-300';
-                }
-            });
-        }
-
-        function closeRatingModal() {
-            document.getElementById('rating-modal').classList.add('hidden');
-            document.getElementById('rating-modal').classList.remove('flex');
-        }
-
-        async function submitRating(event) {
-            event.preventDefault();
-            
-            if (selectedRating === 0) {
-                showToast('Please select a rating', 'error');
-                return;
-            }
-            
-            const name = document.getElementById('reviewer-name').value;
-            const email = document.getElementById('reviewer-email').value;
-            const review = document.getElementById('review-text').value;
-            
-            try {
-                await db.collection('ratings').add({
-                    name,
-                    email,
-                    rating: selectedRating,
-                    review,
-                    contentId: currentContentId,
-                    contentType: currentContentType,
-                    createdAt: new Date().toISOString()
-                });
-                
-                showToast('Thank you for your review!');
-                closeRatingModal();
-                document.getElementById('rating-form').reset();
-                selectedRating = 0;
-            } catch (error) {
-                console.error('Error submitting rating:', error);
-                showToast('Failed to submit review', 'error');
+                menu.classList.remove('hidden');
+            } else {
+                menu.classList.add('hidden');
             }
         }
 
-        // Audio Player Functions
-        function playSong(songId) {
-            // Implementation for playing song
-            showToast('Playing song...');
-        }
-
-        function playVideo(videoId) {
-            // Implementation for playing video
-            showToast('Opening video...');
-        }
-
-        function likeSong(songId) {
-            showToast('Added to your likes!');
-        }
-
-        // Filter Functions
+        // ==================== FILTER FUNCTIONS ====================
         function filterSongs() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const artistFilter = document.getElementById('artist-filter')?.value || '';
@@ -1009,8 +906,91 @@
             filterSongs();
         }
 
-        // Admin Functions
-        async function adminLogin(event) {
+        // ==================== RATING MODAL FUNCTIONS ====================
+        function openRatingModal(contentId, contentType) {
+            currentContentId = contentId;
+            currentContentType = contentType;
+            selectedRating = 0;
+            
+            const modal = document.getElementById('rating-modal');
+            const starsContainer = document.getElementById('rating-stars');
+            
+            starsContainer.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                starsContainer.innerHTML += `
+                    <button type="button" onclick="setRating(${i})" class="rating-star focus:outline-none">
+                        <i class="far fa-star text-3xl text-gray-300"></i>
+                    </button>
+                `;
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function setRating(rating) {
+            selectedRating = rating;
+            const stars = document.querySelectorAll('.rating-star i');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.className = 'fas fa-star text-3xl text-yellow-400';
+                } else {
+                    star.className = 'far fa-star text-3xl text-gray-300';
+                }
+            });
+        }
+
+        function closeRatingModal() {
+            document.getElementById('rating-modal').classList.add('hidden');
+            document.getElementById('rating-modal').classList.remove('flex');
+            document.getElementById('rating-form').reset();
+            selectedRating = 0;
+        }
+
+        async function submitRating(event) {
+            event.preventDefault();
+            
+            if (selectedRating === 0) {
+                showToast('Please select a rating', 'error');
+                return;
+            }
+            
+            const name = document.getElementById('reviewer-name').value;
+            const email = document.getElementById('reviewer-email').value;
+            const review = document.getElementById('review-text').value;
+            
+            // Save to localStorage for demo
+            const ratings = JSON.parse(localStorage.getItem('ratings') || '[]');
+            ratings.push({
+                name,
+                email,
+                rating: selectedRating,
+                review,
+                contentId: currentContentId,
+                contentType: currentContentType,
+                createdAt: new Date().toISOString()
+            });
+            localStorage.setItem('ratings', JSON.stringify(ratings));
+            
+            showToast('Thank you for your review!');
+            closeRatingModal();
+        }
+
+        // ==================== ACTION FUNCTIONS ====================
+        function playSong(songId) {
+            showToast('Now playing...');
+        }
+
+        function playVideo(videoId) {
+            showToast('Opening video player...');
+        }
+
+        function likeSong(songId) {
+            showToast('Added to your likes!');
+        }
+
+        // ==================== ADMIN FUNCTIONS ====================
+        function adminLogin(event) {
             event.preventDefault();
             
             const email = document.getElementById('admin-email').value;
@@ -1042,131 +1022,39 @@
             event.target.classList.add('text-[#d12200]', 'border-b-2', 'border-[#d12200]');
             
             // Load tab content
+            const adminContent = document.getElementById('admin-content');
+            
             switch(tab) {
                 case 'songs':
-                    loadAdminSongs();
+                    adminContent.innerHTML = renderAdminSongsTable();
                     break;
                 case 'videos':
-                    loadAdminVideos();
+                    adminContent.innerHTML = '<p class="text-center py-8">Video management coming soon...</p>';
                     break;
                 case 'comments':
-                    loadAdminComments();
-                    break;
-                case 'analytics':
-                    loadAdminAnalytics();
+                    adminContent.innerHTML = '<p class="text-center py-8">Comment moderation coming soon...</p>';
                     break;
                 case 'settings':
-                    loadAdminSettings();
+                    adminContent.innerHTML = '<p class="text-center py-8">Settings coming soon...</p>';
                     break;
             }
         }
 
-        async function loadAdminSongs() {
-            const content = document.getElementById('admin-content');
-            content.innerHTML = '<div class="text-center py-8"><div class="loader mx-auto"></div></div>';
-            
-            try {
-                const snapshot = await db.collection('songs').orderBy('createdAt', 'desc').get();
-                const songs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                
-                content.innerHTML = `
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-[#a51502]">Manage Songs</h2>
-                        <button onclick="showAddSongForm()" class="bg-[#d12200] text-white px-4 py-2 rounded-lg hover:bg-[#a51502]">
-                            <i class="fas fa-plus mr-2"></i>Add New Song
-                        </button>
-                    </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thumbnail</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Artist</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plays</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                ${songs.map(song => `
-                                    <tr>
-                                        <td class="px-6 py-4">
-                                            <img src="${song.thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100'}" class="w-12 h-12 object-cover rounded">
-                                        </td>
-                                        <td class="px-6 py-4">${song.title}</td>
-                                        <td class="px-6 py-4">${song.artist || 'NWTN'}</td>
-                                        <td class="px-6 py-4">${song.plays || 0}</td>
-                                        <td class="px-6 py-4">
-                                            <button onclick="editSong('${song.id}')" class="text-blue-600 hover:text-blue-800 mr-3">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button onclick="deleteSong('${song.id}')" class="text-red-600 hover:text-red-800">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Error loading songs:', error);
-                content.innerHTML = '<div class="text-center py-8 text-red-600">Error loading songs</div>';
+        function showAddSongForm() {
+            showToast('Add song feature coming soon!');
+        }
+
+        function editSong(songId) {
+            showToast('Edit song feature coming soon!');
+        }
+
+        function deleteSong(songId) {
+            if (confirm('Are you sure you want to delete this song?')) {
+                showToast('Song deleted successfully!');
             }
         }
 
-        // Mobile menu toggle
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            const isAdmin = localStorage.getItem('isAdmin') === 'true';
-            
-            if (menu.classList.contains('hidden')) {
-                menu.innerHTML = `
-                    <a href="#" onclick="navigateTo('home'); toggleMobileMenu()" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">Home</a>
-                    <a href="#" onclick="navigateTo('songs'); toggleMobileMenu()" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">Songs</a>
-                    <a href="#" onclick="navigateTo('videos'); toggleMobileMenu()" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">Videos</a>
-                    <a href="#" onclick="navigateTo('about'); toggleMobileMenu()" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">About</a>
-                    ${isAdmin ? `
-                        <a href="#" onclick="navigateTo('admin'); toggleMobileMenu()" class="block py-2 px-4 bg-[#d12200] text-white rounded">Dashboard</a>
-                    ` : `
-                        <a href="#" onclick="navigateTo('adminLogin'); toggleMobileMenu()" class="block py-2 px-4 text-gray-600 hover:bg-[#f8c5c0] rounded">Admin Login</a>
-                    `}
-                `;
-                menu.classList.remove('hidden');
-            } else {
-                menu.classList.add('hidden');
-            }
-        }
-
-        // Main render function
-        function renderPage(page, params = {}) {
-            switch(page) {
-                case 'home':
-                    renderHomePage();
-                    break;
-                case 'songs':
-                    renderSongsPage();
-                    break;
-                case 'videos':
-                    renderVideosPage();
-                    break;
-                case 'about':
-                    renderAboutPage();
-                    break;
-                case 'adminLogin':
-                    renderAdminLoginPage();
-                    break;
-                case 'admin':
-                    renderAdminDashboard();
-                    break;
-                default:
-                    renderHomePage();
-            }
-        }
-
-        // Initialize the app
+        // ==================== INITIALIZATION ====================
         document.addEventListener('DOMContentLoaded', () => {
             renderNavbar();
             navigateTo('home');
