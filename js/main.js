@@ -349,3 +349,41 @@ function showToast(message, type = 'success') {
 // Make functions global
 window.playSong = playSong;
 window.openVideo = openVideo;
+
+// Disable right-click on audio elements
+document.addEventListener('contextmenu', (e) => {
+    if (e.target.tagName === 'AUDIO' || e.target.closest('.music-player')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Disable keyboard shortcuts for saving
+document.addEventListener('keydown', (e) => {
+    // Prevent Ctrl+S, Ctrl+U, Ctrl+Shift+I, F12
+    if ((e.ctrlKey && (e.key === 's' || e.key === 'u' || e.key === 'S')) || 
+        (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+        e.key === 'F12') {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Disable drag and drop of audio elements
+document.addEventListener('dragstart', (e) => {
+    if (e.target.tagName === 'AUDIO' || e.target.closest('.music-player')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Add blob URL for audio to make it harder to find source
+// In your playSong function, instead of setting audio.src directly:
+// audio.src = song.audioUrl;
+// Use a proxy or blob URL:
+async function loadAudioSecurely(url) {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    audio.src = blobUrl;
+}
