@@ -1,22 +1,24 @@
-import { db, storage, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc, ref, getDownloadURL } from './firebase-config.js';
+import { 
+    db, storage, collection, addDoc, getDocs, doc, updateDoc, 
+    query, orderBy, getDoc, where, limit 
+} from './firebase-config.js';
 
 // Global variables
 let songs = [];
 let videos = [];
-let reviews = [];
-let currentSongIndex = 0;
+let currentPlaylist = [];
+let currentIndex = 0;
 let audio = new Audio();
 let isPlaying = false;
 let siteSettings = {};
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    loadSiteSettings();
-    loadSongs();
-    loadVideos();
-    loadReviews();
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadSiteSettings();
+    await loadSongs();
+    await loadVideos();
     setupEventListeners();
-    setupPlayer();
+    setupAudioPlayer();
 });
 
 // Load site settings
@@ -29,9 +31,6 @@ async function loadSiteSettings() {
             if (siteSettings.logo) {
                 document.getElementById('siteLogo').src = siteSettings.logo;
             }
-            if (siteSettings.primaryColor) {
-                document.documentElement.style.setProperty('--primary', siteSettings.primaryColor);
-            }
         }
     } catch (error) {
         console.error('Error loading settings:', error);
@@ -41,57 +40,71 @@ async function loadSiteSettings() {
 // Load songs
 async function loadSongs() {
     try {
-        const q = query(collection(db, 'songs'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
+        const songsQuery = query(collection(db, 'songs'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(songsQuery);
         songs = [];
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach(doc => {
             songs.push({ id: doc.id, ...doc.data() });
         });
-        displaySongs();
+        
+        displaySongs('recentlyPlayed', songs.slice(0, 6));
+        displaySongs('trendingSongs', songs.sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 6));
+        displaySongs('latestSongs', songs.slice(0, 6));
     } catch (error) {
         console.error('Error loading songs:', error);
     }
 }
 
-// Display songs
-function displaySongs() {
-    const container = document.getElementById('songsContainer');
-    container.innerHTML = songs.map(song => `
-        <div class="song-card" onclick="window.playSong('${song.id}')">
-            <img src="${song.thumbnail || 'assets/default-song.jpg'}" alt="${song.title}" loading="lazy">
-            <div class="song-info">
-                <h4>${song.title}</h4>
-                <p><i class="fas fa-headphones"></i> ${song.plays || 0} plays</p>
-            </div>
-        </div>
-    `).join('');
-}
-
 // Load videos
 async function loadVideos() {
     try {
-        const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
+        const videosQuery = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(videosQuery);
         videos = [];
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach(doc => {
             videos.push({ id: doc.id, ...doc.data() });
         });
-        displayVideos();
+        
+        displayVideos('latestVideos', videos.slice(0, 6));
     } catch (error) {
         console.error('Error loading videos:', error);
     }
 }
 
-// Display videos
-function displayVideos() {
-    const container = document.getElementById('videosContainer');
-    container.innerHTML = videos.map(video => `
-        <div class="video-card" onclick="window.openVideo('${video.id}')">
-            <img src="${video.thumbnail || getYouTubeThumbnail(video.url)}" alt="${video.title}" loading="lazy">
-            <div class="video-info">
-                <h4>${video.title}</h4>
-                <p><i class="fas fa-eye"></i> ${video.views || 0} views</p>
+// Display songs in grid
+function displaySongs(containerId, songsList) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = songsList.map(song => `
+        <div class="card" onclick="window.playSong('${song.id}')">
+            <div class="card-image">
+                <img src="${song.thumbnail || 'assets/default-song.jpg'}" alt="${song.title}" loading="lazy">
+                <button class="play-overlay" onclick="event.stopPropagation(); window.playSong('${song.id}')">
+                    <i class="fas fa-play"></i>
+                </button>
             </div>
+            <h4>${song.title}</h4>
+            <p>${song.artist || 'NWTN MUSICAL'}</p>
+        </div>
+    `).join('');
+}
+
+// Display videos in grid
+function displayVideos(containerId, videosList) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = videosList.map(video => `
+        <div class="card" onclick="window.openVideo('${video.id}')">
+            <div class="card-image">
+                <img src="${video.thumbnail || getYouTubeThumbnail(video.url)}" alt="${video.title}" loading="lazy">
+                <button class="play-overlay" onclick="event.stopPropagation(); window.openVideo('${video.id}')">
+                    <i class="fas fa-play"></i>
+                </button>
+            </div>
+            <h4>${video.title}</h4>
+            <p>${video.views || 0} views</p>
         </div>
     `).join('');
 }
@@ -109,127 +122,104 @@ function extractYouTubeId(url) {
     return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// Load reviews
-async function loadReviews() {
-    try {
-        const q = query(collection(db, 'reviews'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        reviews = [];
-        querySnapshot.forEach((doc) => {
-            reviews.push({ id: doc.id, ...doc.data() });
-        });
-        displayReviews();
-    } catch (error) {
-        console.error('Error loading reviews:', error);
-    }
-}
-
-// Display reviews
-function displayReviews() {
-    const container = document.getElementById('reviewsContainer');
-    container.innerHTML = reviews.map(review => `
-        <div class="review-card">
-            <div class="review-header">
-                <span class="reviewer-name">${review.name}</span>
-                <span class="review-rating">${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}</span>
-            </div>
-            <div class="review-text">${review.review}</div>
-            ${review.reply ? `
-                <div class="reply">
-                    <strong>NWTN MUSICAL:</strong> ${review.reply}
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
-}
-
 // Setup event listeners
 function setupEventListeners() {
-    // Menu toggle
-    document.querySelector('.menu-toggle').addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.toggle('active');
-    });
-
     // Navigation
-    document.querySelectorAll('nav ul li').forEach(item => {
-        item.addEventListener('click', (e) => {
-            document.querySelectorAll('nav ul li').forEach(li => li.classList.remove('active'));
+    document.querySelectorAll('.nav-menu li').forEach(item => {
+        item.addEventListener('click', () => {
+            const page = item.dataset.page;
+            document.querySelectorAll('.nav-menu li').forEach(li => li.classList.remove('active'));
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            
             item.classList.add('active');
+            document.getElementById(`${page}Page`).classList.add('active');
         });
     });
+
+    // Search
+    document.getElementById('searchInput').addEventListener('input', debounce(handleSearch, 500));
+
+    // Player controls
+    document.getElementById('playPauseBtn').addEventListener('click', togglePlay);
+    document.getElementById('prevBtn').addEventListener('click', playPrevious);
+    document.getElementById('nextBtn').addEventListener('click', playNext);
+    document.getElementById('progressSlider').addEventListener('input', seek);
+    document.getElementById('volumeSlider').addEventListener('input', setVolume);
 
     // Review form
     document.getElementById('reviewForm').addEventListener('submit', submitReview);
 
-    // Video modal close
-    document.querySelector('#videoModal .close').addEventListener('click', () => {
-        document.getElementById('videoModal').style.display = 'none';
-        document.getElementById('videoContainer').innerHTML = '';
+    // Star rating
+    document.querySelectorAll('.star-rating i').forEach(star => {
+        star.addEventListener('click', () => {
+            const rating = star.dataset.rating;
+            document.getElementById('reviewRating').value = rating;
+            
+            document.querySelectorAll('.star-rating i').forEach((s, index) => {
+                if (index < rating) {
+                    s.classList.remove('far');
+                    s.classList.add('fas', 'active');
+                } else {
+                    s.classList.remove('fas', 'active');
+                    s.classList.add('far');
+                }
+            });
+        });
     });
 
-    // Close modal on outside click
-    window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            e.target.style.display = 'none';
-            if (e.target.id === 'videoModal') {
-                document.getElementById('videoContainer').innerHTML = '';
-            }
-        }
+    // Modal close
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.closest('.modal').classList.remove('active');
+        });
+    });
+
+    // User menu
+    document.querySelector('.user-btn').addEventListener('click', () => {
+        document.getElementById('reviewModal').classList.add('active');
     });
 }
 
-// Submit review
-async function submitReview(e) {
-    e.preventDefault();
-    
-    const review = {
-        name: document.getElementById('reviewName').value,
-        email: document.getElementById('reviewEmail').value,
-        rating: parseInt(document.getElementById('reviewRating').value),
-        review: document.getElementById('reviewText').value,
-        createdAt: new Date().toISOString(),
-        status: 'pending',
-        reply: null
-    };
+// Handle search
+async function handleSearch(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    if (searchTerm.length < 2) return;
 
     try {
-        await addDoc(collection(db, 'reviews'), review);
-        showToast('Review submitted successfully!');
-        document.getElementById('reviewForm').reset();
-        loadReviews();
+        const songsQuery = query(collection(db, 'songs'), where('title', '>=', searchTerm), limit(10));
+        const snapshot = await getDocs(songsQuery);
+        
+        const results = [];
+        snapshot.forEach(doc => {
+            results.push({ id: doc.id, ...doc.data() });
+        });
+
+        displaySearchResults(results);
     } catch (error) {
-        console.error('Error submitting review:', error);
-        showToast('Error submitting review. Please try again.', 'error');
+        console.error('Search error:', error);
     }
 }
 
-// Setup music player
-function setupPlayer() {
-    // Play/Pause
-    document.getElementById('playPauseBtn').addEventListener('click', togglePlay);
-    
-    // Previous/Next
-    document.getElementById('prevBtn').addEventListener('click', playPrevious);
-    document.getElementById('nextBtn').addEventListener('click', playNext);
-    
-    // Progress bar
-    document.getElementById('progress').addEventListener('input', (e) => {
-        const time = (e.target.value / 100) * audio.duration;
-        audio.currentTime = time;
-    });
-
-    // Volume
-    document.getElementById('volume').addEventListener('input', (e) => {
-        audio.volume = e.target.value;
-        document.getElementById('volumeBtn').innerHTML = `<i class="fas fa-volume-${audio.volume === 0 ? 'mute' : audio.volume < 0.5 ? 'down' : 'up'}"></i>`;
-    });
-
-    // Audio events
-    audio.addEventListener('timeupdate', updateProgress);
-    audio.addEventListener('ended', playNext);
-    audio.addEventListener('loadedmetadata', () => {
-        document.getElementById('duration').textContent = formatTime(audio.duration);
-    });
+// Display search results
+function displaySearchResults(results) {
+    const container = document.getElementById('searchResults');
+    container.innerHTML = `
+        <h3>Search Results</h3>
+        <div class="card-grid">
+            ${results.map(song => `
+                <div class="card" onclick="window.playSong('${song.id}')">
+                    <div class="card-image">
+                        <img src="${song.thumbnail || 'assets/default-song.jpg'}" alt="${song.title}">
+                        <button class="play-overlay" onclick="event.stopPropagation(); window.playSong('${song.id}')">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                    <h4>${song.title}</h4>
+                    <p>${song.artist || 'NWTN MUSICAL'}</p>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 // Play song
@@ -247,65 +237,28 @@ window.playSong = async function(songId) {
         audio.src = song.audioUrl;
         await audio.load();
         
-        // Update player UI
-        document.getElementById('currentSongThumb').src = song.thumbnail || 'assets/default-song.jpg';
-        document.getElementById('currentSongTitle').textContent = song.title;
-        document.getElementById('currentSongArtist').textContent = song.artist || 'NWTN MUSICAL';
+        // Update UI
+        document.getElementById('currentSongImage').src = song.thumbnail || 'assets/default-song.jpg';
+        document.getElementById('currentSongName').textContent = song.title;
+        document.getElementById('currentArtistName').textContent = song.artist || 'NWTN MUSICAL';
         
-        // Show and play
-        document.getElementById('musicPlayer').style.display = 'flex';
-        currentSongIndex = songs.findIndex(s => s.id === songId);
+        // Show player and play
+        document.getElementById('nowPlayingBar').style.display = 'flex';
         await audio.play();
         isPlaying = true;
-        document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i>';
+        updatePlayButton();
+        
+        // Update playlist
+        currentPlaylist = songs;
+        currentIndex = songs.findIndex(s => s.id === songId);
         
         // Reload songs to update play count
         loadSongs();
     } catch (error) {
         console.error('Error playing song:', error);
-        showToast('Error playing song. Please try again.', 'error');
+        showToast('Error playing song');
     }
 };
-
-// Toggle play/pause
-function togglePlay() {
-    if (isPlaying) {
-        audio.pause();
-        document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i>';
-    } else {
-        audio.play();
-        document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i>';
-    }
-    isPlaying = !isPlaying;
-}
-
-// Play previous
-function playPrevious() {
-    if (songs.length === 0) return;
-    currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
-    playSong(songs[currentSongIndex].id);
-}
-
-// Play next
-function playNext() {
-    if (songs.length === 0) return;
-    currentSongIndex = (currentSongIndex + 1) % songs.length;
-    playSong(songs[currentSongIndex].id);
-}
-
-// Update progress bar
-function updateProgress() {
-    const progress = (audio.currentTime / audio.duration) * 100;
-    document.getElementById('progress').value = progress || 0;
-    document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
-}
-
-// Format time
-function formatTime(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
 
 // Open video
 window.openVideo = function(videoId) {
@@ -314,7 +267,7 @@ window.openVideo = function(videoId) {
 
     const videoId_extracted = extractYouTubeId(video.url);
     if (!videoId_extracted) {
-        showToast('Invalid YouTube URL', 'error');
+        showToast('Invalid YouTube URL');
         return;
     }
 
@@ -326,19 +279,134 @@ window.openVideo = function(videoId) {
     // Show modal
     document.getElementById('videoModalTitle').textContent = video.title;
     document.getElementById('videoContainer').innerHTML = `
-        <iframe src="https://www.youtube.com/embed/${videoId_extracted}" frameborder="0" allowfullscreen></iframe>
+        <iframe src="https://www.youtube.com/embed/${videoId_extracted}?autoplay=1" 
+                frameborder="0" 
+                allow="autoplay; encrypted-media" 
+                allowfullscreen>
+        </iframe>
     `;
-    document.getElementById('videoModal').style.display = 'flex';
+    document.getElementById('videoModal').classList.add('active');
     
-    // Reload videos to update view count
+    // Reload videos
     loadVideos();
 };
 
+// Setup audio player
+function setupAudioPlayer() {
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('ended', playNext);
+    audio.addEventListener('loadedmetadata', () => {
+        document.getElementById('totalTime').textContent = formatTime(audio.duration);
+    });
+}
+
+// Update progress
+function updateProgress() {
+    const progress = (audio.currentTime / audio.duration) * 100;
+    document.getElementById('progressBar').style.width = `${progress}%`;
+    document.getElementById('progressSlider').value = progress;
+    document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+}
+
+// Seek
+function seek(e) {
+    const time = (e.target.value / 100) * audio.duration;
+    audio.currentTime = time;
+}
+
+// Set volume
+function setVolume(e) {
+    const volume = e.target.value / 100;
+    audio.volume = volume;
+    document.getElementById('volumeProgress').style.width = `${e.target.value}%`;
+    
+    const icon = document.getElementById('volumeBtn').querySelector('i');
+    if (volume === 0) {
+        icon.className = 'fas fa-volume-mute';
+    } else if (volume < 0.5) {
+        icon.className = 'fas fa-volume-down';
+    } else {
+        icon.className = 'fas fa-volume-up';
+    }
+}
+
+// Toggle play/pause
+function togglePlay() {
+    if (isPlaying) {
+        audio.pause();
+    } else {
+        audio.play();
+    }
+    isPlaying = !isPlaying;
+    updatePlayButton();
+}
+
+// Update play button
+function updatePlayButton() {
+    const btn = document.getElementById('playPauseBtn');
+    btn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+}
+
+// Play previous
+function playPrevious() {
+    if (currentPlaylist.length === 0) return;
+    currentIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+    playSong(currentPlaylist[currentIndex].id);
+}
+
+// Play next
+function playNext() {
+    if (currentPlaylist.length === 0) return;
+    currentIndex = (currentIndex + 1) % currentPlaylist.length;
+    playSong(currentPlaylist[currentIndex].id);
+}
+
+// Format time
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Submit review
+async function submitReview(e) {
+    e.preventDefault();
+    
+    const review = {
+        name: document.getElementById('reviewName').value,
+        email: document.getElementById('reviewEmail').value,
+        rating: parseInt(document.getElementById('reviewRating').value),
+        review: document.getElementById('reviewText').value,
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+    };
+
+    if (review.rating === 0) {
+        showToast('Please select a rating');
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, 'reviews'), review);
+        showToast('Review submitted successfully!');
+        document.getElementById('reviewForm').reset();
+        document.getElementById('reviewModal').classList.remove('active');
+        
+        // Reset stars
+        document.querySelectorAll('.star-rating i').forEach(star => {
+            star.classList.remove('fas', 'active');
+            star.classList.add('far');
+        });
+    } catch (error) {
+        console.error('Error submitting review:', error);
+        showToast('Error submitting review');
+    }
+}
+
 // Show toast
-function showToast(message, type = 'success') {
+function showToast(message) {
     const toast = document.getElementById('toast');
     toast.textContent = message;
-    toast.style.backgroundColor = type === 'success' ? 'var(--primary)' : '#dc3545';
     toast.style.display = 'block';
     
     setTimeout(() => {
@@ -346,44 +414,32 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Security: Disable download
+document.addEventListener('contextmenu', (e) => {
+    if (e.target.tagName === 'AUDIO' || e.target.closest('.now-playing-bar')) {
+        e.preventDefault();
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey && (e.key === 's' || e.key === 'u')) || e.key === 'F12') {
+        e.preventDefault();
+    }
+});
+
 // Make functions global
 window.playSong = playSong;
 window.openVideo = openVideo;
-
-// Disable right-click on audio elements
-document.addEventListener('contextmenu', (e) => {
-    if (e.target.tagName === 'AUDIO' || e.target.closest('.music-player')) {
-        e.preventDefault();
-        return false;
-    }
-});
-
-// Disable keyboard shortcuts for saving
-document.addEventListener('keydown', (e) => {
-    // Prevent Ctrl+S, Ctrl+U, Ctrl+Shift+I, F12
-    if ((e.ctrlKey && (e.key === 's' || e.key === 'u' || e.key === 'S')) || 
-        (e.ctrlKey && e.shiftKey && e.key === 'I') || 
-        e.key === 'F12') {
-        e.preventDefault();
-        return false;
-    }
-});
-
-// Disable drag and drop of audio elements
-document.addEventListener('dragstart', (e) => {
-    if (e.target.tagName === 'AUDIO' || e.target.closest('.music-player')) {
-        e.preventDefault();
-        return false;
-    }
-});
-
-// Add blob URL for audio to make it harder to find source
-// In your playSong function, instead of setting audio.src directly:
-// audio.src = song.audioUrl;
-// Use a proxy or blob URL:
-async function loadAudioSecurely(url) {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    audio.src = blobUrl;
-}
