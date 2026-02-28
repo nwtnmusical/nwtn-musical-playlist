@@ -1,33 +1,39 @@
 import { 
     db, storage, auth, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, 
     query, orderBy, getDoc, ref, uploadBytes, getDownloadURL, deleteObject,
-    signInWithEmailAndPassword, signOut 
+    signInWithEmailAndPassword, signOut, onAuthStateChanged 
 } from './firebase-config.js';
 
-// Check authentication
-auth.onAuthStateChanged((user) => {
+// Check auth state
+onAuthStateChanged(auth, (user) => {
     if (user) {
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'flex';
         loadDashboard();
+        loadSongs();
+        loadVideos();
+        loadReviews();
+        loadSettings();
     } else {
-        document.getElementById('loginForm').style.display = 'block';
-        document.getElementById('adminContent').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('adminDashboard').style.display = 'none';
     }
 });
 
 // Login
-document.getElementById('adminLogin').addEventListener('submit', async (e) => {
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('adminEmail').value;
-    const password = document.getElementById('adminPassword').value;
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
     
     try {
         await signInWithEmailAndPassword(auth, email, password);
-        showToast('Login successful!');
+        errorDiv.textContent = '';
     } catch (error) {
         console.error('Login error:', error);
-        showToast('Login failed: ' + error.message, 'error');
+        errorDiv.textContent = 'Invalid email or password';
     }
 });
 
@@ -35,7 +41,6 @@ document.getElementById('adminLogin').addEventListener('submit', async (e) => {
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     try {
         await signOut(auth);
-        showToast('Logged out successfully');
     } catch (error) {
         console.error('Logout error:', error);
     }
@@ -44,60 +49,138 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 // Tab navigation
 document.querySelectorAll('.admin-nav li').forEach(tab => {
     tab.addEventListener('click', () => {
+        const tabId = tab.dataset.tab;
+        
         document.querySelectorAll('.admin-nav li').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
         
         tab.classList.add('active');
-        const tabId = tab.dataset.tab;
-        document.getElementById(tabId).classList.add('active');
+        document.getElementById(`${tabId}Tab`).classList.add('active');
         
-        if (tabId === 'analytics') {
-            loadAnalytics();
-        }
+        if (tabId === 'dashboard') loadDashboard();
+        if (tabId === 'songs') loadSongs();
+        if (tabId === 'videos') loadVideos();
+        if (tabId === 'reviews') loadReviews();
+        if (tabId === 'settings') loadSettings();
     });
 });
 
 // Load dashboard
 async function loadDashboard() {
     try {
-        const songsSnapshot = await getDocs(collection(db, 'songs'));
-        const videosSnapshot = await getDocs(collection(db, 'videos'));
-        const reviewsSnapshot = await getDocs(collection(db, 'reviews'));
+        // Load stats
+        const songsSnap = await getDocs(collection(db, 'songs'));
+        const videosSnap = await getDocs(collection(db, 'videos'));
+        const reviewsSnap = await getDocs(collection(db, 'reviews'));
         
         let totalPlays = 0;
-        songsSnapshot.forEach(doc => {
+        songsSnap.forEach(doc => {
             totalPlays += doc.data().plays || 0;
         });
         
-        document.getElementById('totalSongs').textContent = songsSnapshot.size;
-        document.getElementById('totalVideos').textContent = videosSnapshot.size;
-        document.getElementById('totalReviews').textContent = reviewsSnapshot.size;
+        document.getElementById('totalSongs').textContent = songsSnap.size;
+        document.getElementById('totalVideos').textContent = videosSnap.size;
+        document.getElementById('totalReviews').textContent = reviewsSnap.size;
         document.getElementById('totalPlays').textContent = totalPlays;
+        
+        // Load top songs for chart
+        const songs = [];
+        songsSnap.forEach(doc => {
+            songs.push({ title: doc.data().title, plays: doc.data().plays || 0 });
+        });
+        
+        songs.sort((a, b) => b.plays - a.plays);
+        const topSongs = songs.slice(0, 5);
+        
+        // Create songs chart
+        new Chart(document.getElementById('songsChart'), {
+            type: 'bar',
+            data: {
+                labels: topSongs.map(s => s.title),
+                datasets: [{
+                    label: 'Plays',
+                    data: topSongs.map(s => s.plays),
+                    backgroundColor: '#d12200'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#b3b3b3' }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: { color: '#b3b3b3' }
+                    },
+                    x: {
+                        ticks: { color: '#b3b3b3' }
+                    }
+                }
+            }
+        });
+        
+        // Load ratings distribution
+        const ratings = [0, 0, 0, 0, 0];
+        reviewsSnap.forEach(doc => {
+            const rating = doc.data().rating;
+            if (rating >= 1 && rating <= 5) {
+                ratings[rating - 1]++;
+            }
+        });
+        
+        // Create ratings chart
+        new Chart(document.getElementById('ratingsChart'), {
+            type: 'pie',
+            data: {
+                labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+                datasets: [{
+                    data: ratings,
+                    backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#28a745', '#d12200']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#b3b3b3' }
+                    }
+                }
+            }
+        });
+        
     } catch (error) {
         console.error('Error loading dashboard:', error);
     }
 }
 
-// Load songs for admin
-async function loadSongsAdmin() {
+// Load songs
+async function loadSongs() {
     try {
-        const q = query(collection(db, 'songs'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
+        const songsQuery = query(collection(db, 'songs'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(songsQuery);
+        
         const tbody = document.getElementById('songsTableBody');
         tbody.innerHTML = '';
         
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach(doc => {
             const song = doc.data();
             tbody.innerHTML += `
                 <tr>
-                    <td><img src="${song.thumbnail || 'assets/default-song.jpg'}" style="width: 50px; height: 50px; object-fit: cover;"></td>
+                    <td><img src="${song.thumbnail || 'assets/default-song.jpg'}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;"></td>
                     <td>${song.title}</td>
                     <td>${song.artist || 'NWTN MUSICAL'}</td>
-                    <td>${song.duration || '3:30'}</td>
                     <td>${song.plays || 0}</td>
                     <td>
-                        <button onclick="editSong('${doc.id}')" class="edit-btn"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteSong('${doc.id}')" class="delete-btn"><i class="fas fa-trash"></i></button>
+                        <button class="edit-btn" onclick="editSong('${doc.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="delete-btn" onclick="deleteSong('${doc.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </td>
                 </tr>
             `;
@@ -107,25 +190,29 @@ async function loadSongsAdmin() {
     }
 }
 
-// Load videos for admin
-async function loadVideosAdmin() {
+// Load videos
+async function loadVideos() {
     try {
-        const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
+        const videosQuery = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(videosQuery);
+        
         const tbody = document.getElementById('videosTableBody');
         tbody.innerHTML = '';
         
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach(doc => {
             const video = doc.data();
             tbody.innerHTML += `
                 <tr>
-                    <td><img src="${video.thumbnail || getYouTubeThumbnail(video.url)}" style="width: 50px; height: 50px; object-fit: cover;"></td>
+                    <td><img src="${video.thumbnail || 'assets/default-video.jpg'}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;"></td>
                     <td>${video.title}</td>
-                    <td><a href="${video.url}" target="_blank">Watch</a></td>
                     <td>${video.views || 0}</td>
                     <td>
-                        <button onclick="editVideo('${doc.id}')" class="edit-btn"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteVideo('${doc.id}')" class="delete-btn"><i class="fas fa-trash"></i></button>
+                        <button class="edit-btn" onclick="editVideo('${doc.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="delete-btn" onclick="deleteVideo('${doc.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </td>
                 </tr>
             `;
@@ -135,15 +222,16 @@ async function loadVideosAdmin() {
     }
 }
 
-// Load reviews for admin
-async function loadReviewsAdmin() {
+// Load reviews
+async function loadReviews() {
     try {
-        const q = query(collection(db, 'reviews'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
+        const reviewsQuery = query(collection(db, 'reviews'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(reviewsQuery);
+        
         const tbody = document.getElementById('reviewsTableBody');
         tbody.innerHTML = '';
         
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach(doc => {
             const review = doc.data();
             tbody.innerHTML += `
                 <tr>
@@ -154,8 +242,14 @@ async function loadReviewsAdmin() {
                     <td>${new Date(review.createdAt).toLocaleDateString()}</td>
                     <td><span class="status ${review.status}">${review.status}</span></td>
                     <td>
-                        ${!review.reply ? `<button onclick="showReplyModal('${doc.id}')" class="reply-btn"><i class="fas fa-reply"></i></button>` : ''}
-                        <button onclick="deleteReview('${doc.id}')" class="delete-btn"><i class="fas fa-trash"></i></button>
+                        ${!review.reply ? `
+                            <button class="reply-btn" onclick="showReplyModal('${doc.id}')">
+                                <i class="fas fa-reply"></i>
+                            </button>
+                        ` : ''}
+                        <button class="delete-btn" onclick="deleteReview('${doc.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </td>
                 </tr>
             `;
@@ -165,7 +259,7 @@ async function loadReviewsAdmin() {
     }
 }
 
-// Load site settings
+// Load settings
 async function loadSettings() {
     try {
         const settingsDoc = await getDoc(doc(db, 'settings', 'site'));
@@ -174,8 +268,10 @@ async function loadSettings() {
             document.getElementById('siteTitle').value = settings.title || '';
             document.getElementById('primaryColor').value = settings.primaryColor || '#d12200';
             document.getElementById('secondaryColor').value = settings.secondaryColor || '#a51502';
+            
             if (settings.logo) {
                 document.getElementById('logoPreview').src = settings.logo;
+                document.getElementById('logoPreview').style.display = 'block';
             }
         }
     } catch (error) {
@@ -183,45 +279,13 @@ async function loadSettings() {
     }
 }
 
-// Save settings
-document.getElementById('settingsForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const settings = {
-        title: document.getElementById('siteTitle').value,
-        primaryColor: document.getElementById('primaryColor').value,
-        secondaryColor: document.getElementById('secondaryColor').value,
-        updatedAt: new Date().toISOString()
-    };
-    
-    // Upload logo if selected
-    const logoFile = document.getElementById('siteLogo').files[0];
-    if (logoFile) {
-        try {
-            const storageRef = ref(storage, 'settings/logo');
-            await uploadBytes(storageRef, logoFile);
-            settings.logo = await getDownloadURL(storageRef);
-        } catch (error) {
-            console.error('Error uploading logo:', error);
-        }
-    }
-    
-    try {
-        await updateDoc(doc(db, 'settings', 'site'), settings);
-        showToast('Settings saved successfully!');
-    } catch (error) {
-        console.error('Error saving settings:', error);
-        showToast('Error saving settings', 'error');
-    }
-});
-
-// Add song
+// Show add song modal
 window.showAddSongModal = function() {
     document.getElementById('songModalTitle').textContent = 'Add Song';
     document.getElementById('songForm').reset();
     document.getElementById('songId').value = '';
     document.getElementById('thumbnailPreview').style.display = 'none';
-    openModal('songModal');
+    document.getElementById('songModal').classList.add('active');
 };
 
 // Edit song
@@ -234,14 +298,17 @@ window.editSong = async function(songId) {
             document.getElementById('songId').value = songId;
             document.getElementById('songTitle').value = song.title;
             document.getElementById('songArtist').value = song.artist || '';
+            
             if (song.thumbnail) {
                 document.getElementById('thumbnailPreview').src = song.thumbnail;
                 document.getElementById('thumbnailPreview').style.display = 'block';
             }
-            openModal('songModal');
+            
+            document.getElementById('songModal').classList.add('active');
         }
     } catch (error) {
         console.error('Error loading song:', error);
+        alert('Error loading song');
     }
 };
 
@@ -255,10 +322,10 @@ document.getElementById('songForm').addEventListener('submit', async (e) => {
     const thumbnailFile = document.getElementById('songThumbnail').files[0];
     const songFile = document.getElementById('songFile').files[0];
     
-    let thumbnailUrl = null;
-    let audioUrl = null;
-    
     try {
+        let thumbnailUrl = null;
+        let audioUrl = null;
+        
         // Upload thumbnail
         if (thumbnailFile) {
             const thumbnailRef = ref(storage, `songs/thumbnails/${Date.now()}_${thumbnailFile.name}`);
@@ -283,22 +350,21 @@ document.getElementById('songForm').addEventListener('submit', async (e) => {
         if (audioUrl) songData.audioUrl = audioUrl;
         
         if (songId) {
-            // Update existing song
             await updateDoc(doc(db, 'songs', songId), songData);
-            showToast('Song updated successfully!');
+            alert('Song updated successfully!');
         } else {
-            // Add new song
             songData.createdAt = new Date().toISOString();
             songData.plays = 0;
             await addDoc(collection(db, 'songs'), songData);
-            showToast('Song added successfully!');
+            alert('Song added successfully!');
         }
         
         closeModal('songModal');
-        loadSongsAdmin();
+        loadSongs();
+        loadDashboard();
     } catch (error) {
         console.error('Error saving song:', error);
-        showToast('Error saving song', 'error');
+        alert('Error saving song');
     }
 });
 
@@ -308,21 +374,22 @@ window.deleteSong = async function(songId) {
     
     try {
         await deleteDoc(doc(db, 'songs', songId));
-        showToast('Song deleted successfully!');
-        loadSongsAdmin();
+        alert('Song deleted successfully!');
+        loadSongs();
+        loadDashboard();
     } catch (error) {
         console.error('Error deleting song:', error);
-        showToast('Error deleting song', 'error');
+        alert('Error deleting song');
     }
 };
 
-// Add video
+// Show add video modal
 window.showAddVideoModal = function() {
     document.getElementById('videoModalTitle').textContent = 'Add Video';
     document.getElementById('videoForm').reset();
     document.getElementById('videoId').value = '';
     document.getElementById('videoThumbnailPreview').style.display = 'none';
-    openModal('videoModal');
+    document.getElementById('videoModal').classList.add('active');
 };
 
 // Edit video
@@ -335,14 +402,17 @@ window.editVideo = async function(videoId) {
             document.getElementById('videoId').value = videoId;
             document.getElementById('videoTitle').value = video.title;
             document.getElementById('videoUrl').value = video.url;
+            
             if (video.thumbnail) {
                 document.getElementById('videoThumbnailPreview').src = video.thumbnail;
                 document.getElementById('videoThumbnailPreview').style.display = 'block';
             }
-            openModal('videoModal');
+            
+            document.getElementById('videoModal').classList.add('active');
         }
     } catch (error) {
         console.error('Error loading video:', error);
+        alert('Error loading video');
     }
 };
 
@@ -355,10 +425,9 @@ document.getElementById('videoForm').addEventListener('submit', async (e) => {
     const url = document.getElementById('videoUrl').value;
     const thumbnailFile = document.getElementById('videoThumbnail').files[0];
     
-    let thumbnailUrl = null;
-    
     try {
-        // Upload thumbnail if provided
+        let thumbnailUrl = null;
+        
         if (thumbnailFile) {
             const thumbnailRef = ref(storage, `videos/thumbnails/${Date.now()}_${thumbnailFile.name}`);
             await uploadBytes(thumbnailRef, thumbnailFile);
@@ -374,22 +443,21 @@ document.getElementById('videoForm').addEventListener('submit', async (e) => {
         if (thumbnailUrl) videoData.thumbnail = thumbnailUrl;
         
         if (videoId) {
-            // Update existing video
             await updateDoc(doc(db, 'videos', videoId), videoData);
-            showToast('Video updated successfully!');
+            alert('Video updated successfully!');
         } else {
-            // Add new video
             videoData.createdAt = new Date().toISOString();
             videoData.views = 0;
             await addDoc(collection(db, 'videos'), videoData);
-            showToast('Video added successfully!');
+            alert('Video added successfully!');
         }
         
         closeModal('videoModal');
-        loadVideosAdmin();
+        loadVideos();
+        loadDashboard();
     } catch (error) {
         console.error('Error saving video:', error);
-        showToast('Error saving video', 'error');
+        alert('Error saving video');
     }
 });
 
@@ -399,11 +467,12 @@ window.deleteVideo = async function(videoId) {
     
     try {
         await deleteDoc(doc(db, 'videos', videoId));
-        showToast('Video deleted successfully!');
-        loadVideosAdmin();
+        alert('Video deleted successfully!');
+        loadVideos();
+        loadDashboard();
     } catch (error) {
         console.error('Error deleting video:', error);
-        showToast('Error deleting video', 'error');
+        alert('Error deleting video');
     }
 };
 
@@ -411,10 +480,10 @@ window.deleteVideo = async function(videoId) {
 window.showReplyModal = function(reviewId) {
     document.getElementById('replyReviewId').value = reviewId;
     document.getElementById('replyText').value = '';
-    openModal('replyModal');
+    document.getElementById('replyModal').classList.add('active');
 };
 
-// Submit reply
+// Save reply
 document.getElementById('replyForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -428,12 +497,12 @@ document.getElementById('replyForm').addEventListener('submit', async (e) => {
             repliedAt: new Date().toISOString()
         });
         
-        showToast('Reply sent successfully!');
+        alert('Reply sent successfully!');
         closeModal('replyModal');
-        loadReviewsAdmin();
+        loadReviews();
     } catch (error) {
         console.error('Error sending reply:', error);
-        showToast('Error sending reply', 'error');
+        alert('Error sending reply');
     }
 });
 
@@ -443,140 +512,60 @@ window.deleteReview = async function(reviewId) {
     
     try {
         await deleteDoc(doc(db, 'reviews', reviewId));
-        showToast('Review deleted successfully!');
-        loadReviewsAdmin();
+        alert('Review deleted successfully!');
+        loadReviews();
+        loadDashboard();
     } catch (error) {
         console.error('Error deleting review:', error);
-        showToast('Error deleting review', 'error');
+        alert('Error deleting review');
     }
 };
 
-// Load analytics
-async function loadAnalytics() {
-    try {
-        // Load songs data
-        const songsSnapshot = await getDocs(collection(db, 'songs'));
-        const songsData = [];
-        songsSnapshot.forEach(doc => {
-            songsData.push({
-                title: doc.data().title,
-                plays: doc.data().plays || 0
-            });
-        });
-        
-        // Sort by plays and take top 10
-        songsData.sort((a, b) => b.plays - a.plays);
-        const topSongs = songsData.slice(0, 10);
-        
-        // Create songs chart
-        new Chart(document.getElementById('songsChart'), {
-            type: 'bar',
-            data: {
-                labels: topSongs.map(s => s.title),
-                datasets: [{
-                    label: 'Plays',
-                    data: topSongs.map(s => s.plays),
-                    backgroundColor: '#d12200'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-        
-        // Load videos data
-        const videosSnapshot = await getDocs(collection(db, 'videos'));
-        const videosData = [];
-        videosSnapshot.forEach(doc => {
-            videosData.push({
-                title: doc.data().title,
-                views: doc.data().views || 0
-            });
-        });
-        
-        // Sort by views and take top 10
-        videosData.sort((a, b) => b.views - a.views);
-        const topVideos = videosData.slice(0, 10);
-        
-        // Create videos chart
-        new Chart(document.getElementById('videosChart'), {
-            type: 'bar',
-            data: {
-                labels: topVideos.map(v => v.title),
-                datasets: [{
-                    label: 'Views',
-                    data: topVideos.map(v => v.views),
-                    backgroundColor: '#a51502'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-        
-        // Load reviews for ratings distribution
-        const reviewsSnapshot = await getDocs(collection(db, 'reviews'));
-        const ratings = [0, 0, 0, 0, 0];
-        reviewsSnapshot.forEach(doc => {
-            const rating = doc.data().rating;
-            if (rating >= 1 && rating <= 5) {
-                ratings[rating - 1]++;
-            }
-        });
-        
-        // Create ratings chart
-        new Chart(document.getElementById('ratingsChart'), {
-            type: 'pie',
-            data: {
-                labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
-                datasets: [{
-                    data: ratings,
-                    backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#28a745', '#d12200']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-        
-    } catch (error) {
-        console.error('Error loading analytics:', error);
-    }
-}
-
-// Utility functions
-function openModal(modalId) {
-    document.getElementById(modalId).style.display = 'flex';
-}
-
-window.closeModal = function(modalId) {
-    document.getElementById(modalId).style.display = 'none';
-};
-
-function showToast(message, type = 'success') {
-    // You can implement a toast notification here
-    alert(message); // Temporary solution
-}
-
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    loadSongsAdmin();
-    loadVideosAdmin();
-    loadReviewsAdmin();
-    loadSettings();
+// Save settings
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
     
-    // Tab click handlers
-    document.querySelectorAll('.admin-nav li').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const tabId = tab.dataset.tab;
-            if (tabId === 'songs') loadSongsAdmin();
-            if (tabId === 'videos') loadVideosAdmin();
-            if (tabId === 'reviews') loadReviewsAdmin();
-            if (tabId === 'settings') loadSettings();
-            if (tabId === 'analytics') loadAnalytics();
-        });
-    });
+    const title = document.getElementById('siteTitle').value;
+    const primaryColor = document.getElementById('primaryColor').value;
+    const secondaryColor = document.getElementById('secondaryColor').value;
+    const logoFile = document.getElementById('siteLogo').files[0];
+    
+    try {
+        const settings = {
+            title,
+            primaryColor,
+            secondaryColor,
+            updatedAt: new Date().toISOString()
+        };
+        
+        if (logoFile) {
+            const logoRef = ref(storage, 'settings/logo');
+            await uploadBytes(logoRef, logoFile);
+            settings.logo = await getDownloadURL(logoRef);
+        }
+        
+        await updateDoc(doc(db, 'settings', 'site'), settings);
+        alert('Settings saved successfully!');
+        
+        // Update preview
+        if (settings.logo) {
+            document.getElementById('logoPreview').src = settings.logo;
+            document.getElementById('logoPreview').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        alert('Error saving settings');
+    }
+});
+
+// Close modal
+window.closeModal = function(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+};
+
+// Close modals on outside click
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('admin-modal')) {
+        e.target.classList.remove('active');
+    }
 });
